@@ -74,6 +74,137 @@ const createNotice = async (req, res) => {
   }
 };
 
+// Save notice as draft (create new draft)
+const saveAsDraft = async (req, res) => {
+  try {
+    // Process attachments from uploaded files
+    const attachments = req.files
+      ? req.files.map((file) => ({
+          filename: file.filename,
+          originalName: file.originalname,
+          path: `/uploads/${file.filename}`,
+          size: file.size,
+          mimeType: file.mimetype,
+        }))
+      : [];
+
+    // Extract form fields
+    const {
+      noticeTitle,
+      noticeType,
+      targetDepartments,
+      publishDate,
+      noticeBody,
+    } = req.body;
+
+    // Validate required fields
+    if (
+      !noticeTitle ||
+      !noticeType ||
+      !targetDepartments ||
+      !publishDate ||
+      !noticeBody
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "All required fields must be provided",
+        required: [
+          "noticeTitle",
+          "noticeType",
+          "targetDepartments",
+          "publishDate",
+          "noticeBody",
+        ],
+      });
+    }
+
+    // Create new draft notice
+    const newDraftNotice = new NoticeModal({
+      noticeTitle,
+      noticeType,
+      targetDepartments,
+      publishDate: new Date(publishDate),
+      noticeBody,
+      attachments,
+      status: "Draft",
+    });
+
+    // Save to database
+    const savedDraftNotice = await newDraftNotice.save();
+
+    res.status(201).json({
+      success: true,
+      message: "Draft notice created successfully",
+      data: savedDraftNotice,
+    });
+  } catch (error) {
+    console.error("Error creating draft notice:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
+// Get all draft notices with pagination and filtering
+const getAllDraft = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      status = "Draft",
+      noticeType,
+      targetDepartments,
+      search,
+    } = req.query;
+
+    // Build query
+    const query = {};
+
+    if (status) query.status = status;
+    if (noticeType) query.noticeType = noticeType;
+    if (targetDepartments) query.targetDepartments = targetDepartments;
+    if (search) {
+      query.$or = [
+        { noticeTitle: { $regex: search, $options: "i" } },
+        { noticeBody: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Execute query with pagination
+    const draftNotices = await NoticeModal.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Get total count for pagination
+    const total = await NoticeModal.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: draftNotices,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / parseInt(limit)),
+        totalNotices: total,
+        hasNext: skip + parseInt(limit) < total,
+        hasPrev: parseInt(page) > 1,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching draft notices:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
 // Get all notices with pagination and filtering
 const getAllNotices = async (req, res) => {
   try {
@@ -325,4 +456,6 @@ export {
   updateNoticeStatus,
   getAllNotices,
   getNoticeById,
+  saveAsDraft,
+  getAllDraft,
 };

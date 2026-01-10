@@ -2,10 +2,12 @@ import express from "express";
 import {
   createNotice,
   getAllNotices,
+  getAllDraft,
   getNoticeById,
   updateNotice,
   deleteNotice,
   updateNoticeStatus,
+  saveAsDraft,
 } from "../controller/notice.controller.js";
 import {
   upload,
@@ -22,6 +24,19 @@ router.post(
   errorCheck,
   createNotice
 );
+
+// Create a new draft notice
+// POST: localhost:3000/api/v1/notice/create-draft
+router.post(
+  "/create-draft",
+  upload.array("attachments", 5),
+  errorCheck,
+  saveAsDraft
+);
+
+// Get all draft notices
+// GET: localhost:3000/api/v1/notice/drafts?page=1&limit=10&search=keyword
+router.get("/drafts", getAllDraft);
 
 // Get all notices with filtering and pagination
 // GET: localhost:3000/api/v1/notice/all?status=Published&noticeType=General&page=1&limit=10&search=keyword
@@ -43,6 +58,10 @@ router.patch(
 // Update notice status (publish/unpublish)
 // PATCH: localhost:3000/api/v1/notice/status/:id
 router.patch("/status/:id", updateNoticeStatus);
+
+// Save notice as draft (update existing)
+// PATCH: localhost:3000/api/v1/notice/save-draft/:id
+router.patch("/save-draft/:id", saveAsDraft);
 
 // Delete notice by ID
 // DELETE: localhost:3000/api/v1/notice/delete/:id
