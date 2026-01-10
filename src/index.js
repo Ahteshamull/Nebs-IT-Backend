@@ -6,6 +6,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import dbConnect from "./config/database/dbConfig.js";
 import router from "./api/index.js";
+import cors from "cors";
 
 const app = express();
 
@@ -16,6 +17,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use("/uploads", express.static("uploads"));
+
+// CORS
+app.use(cors({
+    origin: "*",
+    credentials: true,
+}));
 
 // Routes
 app.use(router);
