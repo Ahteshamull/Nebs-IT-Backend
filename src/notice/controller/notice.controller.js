@@ -171,7 +171,6 @@ const getNoticeById = async (req, res) => {
 const updateNotice = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
 
     if (!id) {
       return res.status(400).json({
@@ -180,12 +179,38 @@ const updateNotice = async (req, res) => {
       });
     }
 
+    // Process attachments from uploaded files
+    const newAttachments = req.files
+      ? req.files.map((file) => ({
+          filename: file.filename,
+          originalName: file.originalname,
+          path: `/uploads/${file.filename}`,
+          size: file.size,
+          mimeType: file.mimetype,
+        }))
+      : [];
+
+    // Get existing notice to merge attachments
+    const existingNotice = await NoticeModal.findById(id);
+    if (!existingNotice) {
+      return res.status(404).json({
+        success: false,
+        message: "Notice not found",
+      });
+    }
+
+    // Merge existing attachments with new ones
+    const updateData = {
+      ...req.body,
+      attachments: [...(existingNotice.attachments || []), ...newAttachments],
+      updatedAt: new Date(),
+    };
+
     // Find and update notice
-    const updatedNotice = await NoticeModal.findByIdAndUpdate(
-      id,
-      { ...updateData, updatedAt: new Date() },
-      { new: true, runValidators: true }
-    );
+    const updatedNotice = await NoticeModal.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
+    });
 
     if (!updatedNotice) {
       return res.status(404).json({
