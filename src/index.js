@@ -19,10 +19,12 @@ app.use(cookieParser());
 app.use("/uploads", express.static("uploads"));
 
 // CORS
-app.use(cors({
-    origin: ["http://localhost:3001"],
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
     credentials: true,
-}));
+  })
+);
 
 // Routes
 app.use(router);
