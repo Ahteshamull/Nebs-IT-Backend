@@ -1,8 +1,8 @@
 {
-  "name": "hostingflow",
+  "name": "nebs-it",
   "version": "1.0.0",
   "description": "",
-  "main": "src/index.js",
+  "main": "index.js",
   "type": "module",
   "scripts": {
     "start": "nodemon src/index.js",
