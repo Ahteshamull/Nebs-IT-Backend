@@ -34,7 +34,7 @@ app.get("/", (req, res) => {
   res.json({
     error: false,
     success: true,
-    message: `Welcome to Hostinflu. Server is running on port ${PORT}`,
+    message: `Welcome to Nebs-IT. Server is running on port ${PORT}`,
     version: "v1",
   });
 });
